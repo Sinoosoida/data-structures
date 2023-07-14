@@ -30,6 +30,31 @@ public:
   explicit operator ::int64_t () const { return a + b; }
 };
 
+
+TEST_CASE("Test of utiles") {
+  self_destroyed_array<int> array(2, 2, 42);
+  int** ptr = array.get_ptr();
+  for (int i=0 ; i<2 ; i++) {
+    CHECK((*ptr[i])<2);
+    CHECK((*ptr[i])>=0);
+  }
+
+  *ptr[0] = 0;
+  *ptr[1] = 1;
+  CHECK(func(ptr[0], ptr[1])==-1);
+  CHECK(func(ptr[1], ptr[0])==1);
+
+  *ptr[0] = 1;
+  *ptr[1] = 0;
+  CHECK(func(ptr[0], ptr[1])==1);
+  CHECK(func(ptr[1], ptr[0])==-1);
+
+  *ptr[0] = 0;
+  *ptr[1] = 0;
+  CHECK(func(ptr[0], ptr[1])==0);
+  CHECK(func(ptr[1], ptr[0])==0);
+}
+
 TEST_CASE("merge sort: sort of int array, len is 5") {
 
   const int len = 5;

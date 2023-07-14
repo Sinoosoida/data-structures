@@ -7,7 +7,7 @@ private:
   int64_t ln;
 
 public:
-  self_destroyed_array(int64_t len_in, int random_seed = 42) : ln(len_in) {
+  self_destroyed_array(int64_t len_in, int random_seed) : ln(len_in) {
     srand(10);
     if (not std::is_constructible_v<T, int>) {
       return;
@@ -18,7 +18,7 @@ public:
       ptr[i] = new T(rand());
     }
   }
-  self_destroyed_array(int64_t len_in, int64_t divider, int random_seed = 42)
+  self_destroyed_array(int64_t len_in, int64_t divider, int random_seed)
       : ln(len_in) {
     srand(10);
     if (not std::is_constructible_v<T, int>) {
