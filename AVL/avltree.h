@@ -33,6 +33,19 @@ public:
 
   bool add(T *pElement) {
 
+//    //we need to find the place where we will insert the element
+//    leaf** current_node = &m_pRoot;
+//    leaf* curr = current_node;
+//    int a = curr;
+//    T b =a;
+//    while (current_node != nullptr) {
+//      int cmp = Compare(&pElement, current_node);
+//      if (cmp < 0) {
+//        current_node = current_node->pLeft;
+//      } else if (cmp > 0) {
+//        current_node = current_node->pRight;
+//      } else return *current_node;
+//    }
   }
 
   bool update(T *pElement) {}
@@ -50,7 +63,13 @@ public:
 
   }
 
-  bool remove(const T &element) {}
+  bool remove(const T &element) {
+    leaf* element_leaf = find(element);
+    if (element_leaf == nullptr) {
+      return false;
+    }
+
+  }
 
   void clear()
   {
