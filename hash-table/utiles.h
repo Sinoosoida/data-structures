@@ -1,7 +1,7 @@
 #include "cmath"
 #include <limits.h>
 
-template <class T> unsigned int HashFunc(const T* pElement){
+template <class T> unsigned int HashFunc(T *pElement){
   char* byte_array = reinterpret_cast<char*> (pElement);
   unsigned int result = 0;
   for (int i=0 ; i<sizeof(T) ; i++) {
