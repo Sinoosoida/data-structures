@@ -86,8 +86,28 @@ public:
   /**
   Деструктор. Должен освобождать всю выделенную память
   */
-  virtual ~CHash() {//DONE
+  virtual ~CHash() {
     clear();
+    delete[] m_pTable;
+    m_pTable = nullptr;
+  }
+
+  /**
+   Функция для визуализации и отладки
+  */
+  void print() {
+    printf("Hash-table size: %d\n", m_tableSize);
+    for (int i=0 ; i< m_tableSize ; i++) {
+      printf("-------------------------%d-------------------------\n",i);
+      auto current_element = m_pTable[i];
+      while (current_element != nullptr) {
+        printf("element_address:%d\nelement_hash:%ld\n",current_element->pData,HashFunc(current_element->pData));
+        if (current_element->pnext!= nullptr) {
+          printf("     ||\n     \\/ \n");
+        }
+        current_element = current_element->pnext;
+      }
+    }
   }
 
   /**
@@ -129,10 +149,14 @@ public:
   добавляет, если элемента еще нет. Возвращает false, если был добавлен новый
   элемент, true если элемент обновлен.
   */
+  /**
+   Если элемент равный передаваемому уже хранится, то обновляется указатетель.
+    */
   bool update(T *pElement) {
     auto res = remove(*pElement);
     add(pElement);
-  } // TODO
+    return res;
+  } // TODO можно быстрее
 
   /**
   Функция поиска элемента в Хеш-таблице. Возвращает указатель на данные. Если
@@ -185,7 +209,11 @@ public:
   /**
   Удаление всех элементов. Можно вызвать в деструкторе
   */
-  void clear() {}//TODO
+  void clear() {
+    for (int i = 0; i < m_tableSize; i++)
+      m_pTable[i] = nullptr;
+    m_Memory.clear();
+  }
 
 private:
   /**
