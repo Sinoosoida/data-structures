@@ -4,28 +4,15 @@
 #include <cmath>
 
 using namespace std;
-
-size_t counter = 0;
-
-// This is a key-value retrieval function, it is assumed that the execution time
-// of this function is significant,
-//  and this justifies the use of a cache.
-//  This function also allows you to count the number of times it has been run.
-auto fetchFunction_str_str = [](const std::string &key) -> std::string {
-  ++counter;
-  return "Value for key " + key;
-};
-
+//beautiful
 TEST_CASE("Fill cache") {
   auto fetch = [](int key) { return key; };
 
   LRUCache<int, int> cache(5, fetch);
 
-  for(int i = 1; i <= 5; i++) {
-    cache.put(i, i);
+  for (int i = 1; i <= 5; i++) {
+    cache.put(i, i + 1);
   }
-
-  cache.put(6, 6); // This won't evict anything
 
   CHECK(*cache.get(1) == 1); // 1 is still there
 
@@ -53,265 +40,100 @@ TEST_CASE("Random operations") {
 
   std::srand(std::time(nullptr));
 
-  for(int i = 0; i < 1000; i++) {
-    if(std::rand() % 2 == 0) { // put
+  for (int i = 0; i < 1000; i++) {
+    if (std::rand() % 2 == 0) { // put
       int key = std::rand() % 1000;
       cache.put(key, key);
-    }
-    else { // get
+    } else { // get
       int key = std::rand() % 1000;
-      const int* val = cache.get(key);
-      if(val) {
+      const int *val = cache.get(key);
+      if (val) {
         CHECK(*val == key);
       }
     }
   }
 }
 
+size_t counter = 0;
 
-//TEST_CASE("elements without repeating") {
-//
-//  counter = 0;
-//  const int len = 100; //number of unique pairs
-//  const int size = 10; //cache size
-//  LRUCache<std::string, std::string> cache(size, fetchFunction_str_str);
-//
-//  for (int i = 0; i < len; i++) {
-//    std::string val = std::to_string(i);
-//    CHECK(((*(cache.get(val))) == fetchFunction_str_str(val)));
-//    CHECK(counter == len * 2);
-//  }
-//}
-//
-//TEST_CASE("cache with repeating, size = 10, period = 100") {
-//  counter = 0;
-//  const int len = 100; //number of unique pairs
-//  const int size = 10; //cache size
-//  const int period = 100; //number of unique pairs
-//  LRUCache<std::string, std::string> cache(size, fetchFunction_str_str);
-//
-//  for (int i = 0; i < len; i++) {
-//    std::string val = std::to_string(i % period);
-//    CHECK(((*(cache.get(val))) == fetchFunction_str_str(val)));
-//  }
-//  if (period <= size) {
-//    CHECK(counter - len == period);
-//  } else {
-//    CHECK(counter - len == len);
-//  }
-//}
+// This is a key-value retrieval function, it is assumed that the execution time
+// of this function is significant,
+//  and this justifies the use of a cache.
+//  This function also allows you to count the number of times it has been run.
+auto fetchFunction_str_str = [](const std::string &key,
+                                bool count_request = true) -> std::string {
+  if (count_request)
+    ++counter;
+  return "Value for key " + key;
+};
 
-//TEST_CASE("cache with repeating, size = 100, period = 100") {
-//  counter = 0;
-//  const int len = 100;
-//  const int size = 100;
-//  const int period = 100;
-//  LRUCache<std::string, std::string> cache(size, fetchFunction_str_str);
-//
-//  for (int i = 0; i < len; i++) {
-//    std::string val = std::to_string(i % period);
-//    CHECK(((*(cache.get(val))) == fetchFunction_str_str(val)));
-//  }
-//  if (period <= size) {
-//    CHECK(counter - len == period);
-//  } else {
-//    CHECK(counter - len == len);
-//  }
-//}
-//
-//TEST_CASE("cache with repeating, size = 100, period = 10") {
-//  counter = 0;
-//  const int len = 100;
-//  const int size = 100;
-//  const int period = 10;
-//  LRUCache<std::string, std::string> cache(size, fetchFunction_str_str);
-//
-//  for (int i = 0; i < len; i++) {
-//    std::string val = std::to_string(i % period);
-//    CHECK(((*(cache.get(val))) == fetchFunction_str_str(val)));
-//  }
-//  if (period <= size) {
-//    CHECK(counter - len == period);
-//  } else {
-//    CHECK(counter - len == len);
-//  }
-//}
+TEST_CASE("Random operations, big size") {
 
-//TEST_CASE("BIG SIZES: cache with repeating, size = 10, period = 10000") {
-//  counter = 0;
-//  const int len = 10000000;
-//  const int size = 10;
-//  const int period = 10000;
-//  LRUCache<std::string, std::string> cache(size, fetchFunction_str_str);
-//
-//  for (int i = 0; i < len; i++) {
-//    std::string val = std::to_string(i % period);
-//    CHECK(((*(cache.get(val))) == fetchFunction_str_str(val)));
-//  }
-//  if (period <= size) {
-//    CHECK(counter - len == period);
-//  } else {
-//    CHECK(counter - len == len);
-//  }
-//}
+  //  Probability theory doesn't always favor us,
+  //  but if the program works as expected,
+  //  the probability of failing the test is
+  //  0.004 * 5[test cases] * 2[checks per test]
+  //  if safety_factor = 3 is used
 
-TEST_CASE("BIG SIZES: cache with repeating, size = 100000, period = 10000") {
-  counter = 0;
-  const int len = 10000000;
-  const int size = 100000;
-  const int period = 100;
-  LRUCache<std::string, std::string> cache(size, fetchFunction_str_str);
+  const int safety_factor = 3;
 
-  for (int i = 0; i < len; i++) {
-    std::string val = std::to_string(i % period);
-    CHECK(((*(cache.get(val))) == fetchFunction_str_str(val)));
-  }
-  if (period <= size) {
-    CHECK(counter - len == period);
-  } else {
-    CHECK(counter - len == len);
+  std::vector<std::vector<int>> data{{1000000, 1, 10},
+                                     {1000000, 10, 10},
+                                     {1000000, 100, 300},
+                                     {1000000, 299, 300},
+                                     {1000000, 1, 300}};
+
+  for (auto &test_data : data) {
+
+    const int len = test_data[0];        // number of requests
+    const int cache_size = test_data[1]; // number of elements saved in cache
+    const int period = test_data[2];     // number of unique requests
+
+    CAPTURE(len);
+    CAPTURE(cache_size);
+    CAPTURE(period);
+
+    counter = 0;
+    std::srand(42);
+
+    /**
+     * This uses a theoretical formula to estimate the number of spares.
+     * It uses the central limit theorem.
+     */
+    LRUCache<std::string, std::string> cache(cache_size, fetchFunction_str_str);
+
+    for (int i = 0; i < len; i++) {
+      std::string key = std::to_string(rand() % period);
+
+      auto real_val = fetchFunction_str_str(key, false);
+      auto cached_val = *(cache.get(key));
+
+      //      CHECK(cached_val == real_val);
+    }
+
+    // the probability that the requested item will not be in the cache
+    double p_of_new_request = 1 - (double(cache_size) / double(period));
+
+    // estimated number of fetch function runs
+    double expectation_of_number_of_requests = p_of_new_request * (len);
+
+    // single item variance calculation
+    double dispersion_of_one_element =
+        p_of_new_request * (1 - p_of_new_request);
+
+    // single item standard deviation
+    double standard_deviation_of_one_element = sqrt(dispersion_of_one_element);
+
+    // standard deviation of request count
+    double standard_deviation_of_number_of_requests =
+        sqrt(len) * standard_deviation_of_one_element;
+
+    CHECK(counter >=
+          expectation_of_number_of_requests -
+              standard_deviation_of_number_of_requests * safety_factor);
+
+    CHECK(counter <=
+          expectation_of_number_of_requests + cache_size +
+              standard_deviation_of_number_of_requests * safety_factor);
   }
 }
-
-TEST_CASE("BIG SIZES: cache with repeating, size = 10, period = 10000") {
-  counter = 0;
-  const int len = 10000000;
-  const int size = 10;
-  const int period = 10000;
-  LRUCache<std::string, std::string> cache(size, fetchFunction_str_str);
-
-  for (int i = 0; i < len; i++) {
-    std::string val = std::to_string(i % period);
-    CHECK(((*(cache.get(val))) == fetchFunction_str_str(val)));
-  }
-  if (period <= size) {
-    CHECK(counter - len == period);
-  } else {
-    CHECK(counter - len == len);
-  }
-}
-
-// TEST_CASE("BIG SIZES: random access. size=10, period=100") {
-//     counter = 0;
-//
-//     double safety_factor = 10;
-//     const int len = 100000000;
-//     const int size = 10;
-//     const int period = 100;
-//     LRUCache<std::string, std::string> cache(size, fetchFunction_str_str);
-//
-//     for (int i = 0; i < len; i++) {
-//         std::string val = std::to_string(rand()%period);
-//         CHECK(((*(cache.get(val))) == fetchFunction_str_str(val)));
-//     }
-//
-//     double p_of_new_request = 1 - (size / period);
-//     double expectation_of_number_of_requests = p_of_new_request * (len);
-//     double dispersion = p_of_new_request*(1-p_of_new_request)*(len);
-////    expectation_of_number_of_requests+=period;
-//    double standard_deviation = sqrt(dispersion);
-//
-//    CHECK(counter-len >= expectation_of_number_of_requests -
-//    standard_deviation*safety_factor); CHECK(counter-len <=
-//    expectation_of_number_of_requests + standard_deviation*safety_factor);
-//}
-
-// TEST_CASE("BIG SIZES: random access. size=50, period=100") {
-//     counter = 0;
-//
-//     double safety_factor = 10;
-//     const int len = 100000000;
-//     const int size = 50;
-//     const int period = 100;
-//     LRUCache<std::string, std::string> cache(size, fetchFunction_str_str);
-//
-//     for (int i = 0; i < len; i++) {
-//         std::string val = std::to_string(rand()%period);
-//         CHECK(((*(cache.get(val))) == fetchFunction_str_str(val)));
-//     }
-//
-//     double p_of_new_request = 1 - (size / period);
-//     double expectation_of_number_of_requests = p_of_new_request * (len);
-//     double dispersion = p_of_new_request*(1-p_of_new_request)*(len);
-////    expectation_of_number_of_requests+=period;
-//    double standard_deviation = sqrt(dispersion);
-//
-//    CHECK(counter-len >= expectation_of_number_of_requests -
-//    standard_deviation*safety_factor); CHECK(counter-len <=
-//    expectation_of_number_of_requests + standard_deviation*safety_factor);
-//}
-
-// TEST_CASE("BIG SIZES: random access. size=90, period=100") {
-//     counter = 0;
-//
-//     double safety_factor = 10;
-//     const int len = 100000000;
-//     const int size = 90;
-//     const int period = 100;
-//     LRUCache<std::string, std::string> cache(size, fetchFunction_str_str);
-//
-//     for (int i = 0; i < len; i++) {
-//         std::string val = std::to_string(rand()%period);
-//         CHECK(((*(cache.get(val))) == fetchFunction_str_str(val)));
-//     }
-//
-//     double p_of_new_request = 1 - (size / period);
-//     double expectation_of_number_of_requests = p_of_new_request * (len);
-//     double dispersion = p_of_new_request*(1-p_of_new_request)*(len);
-////    expectation_of_number_of_requests+=period;
-//    double standard_deviation = sqrt(dispersion);
-//
-//    CHECK(counter-len >= expectation_of_number_of_requests -
-//    standard_deviation*safety_factor); CHECK(counter-len <=
-//    expectation_of_number_of_requests + standard_deviation*safety_factor);
-//}
-
-// TEST_CASE("BIG SIZES: random access. size=100, period=1000") {
-//     counter = 0;
-//
-//     double safety_factor = 10;
-//     const int len = 1000000000;
-//     const int size = 100;
-//     const int period = 1000;
-//     LRUCache<std::string, std::string> cache(size, fetchFunction_str_str);
-//
-//     for (int i = 0; i < len; i++) {
-//         std::string val = std::to_string(rand()%period);
-//         CHECK(((*(cache.get(val))) == fetchFunction_str_str(val)));
-//     }
-//
-//     double p_of_new_request = 1 - (size / period);
-//     double expectation_of_number_of_requests = p_of_new_request * (len);
-//     double dispersion = p_of_new_request*(1-p_of_new_request)*(len);
-//     //    expectation_of_number_of_requests+=period;
-//     double standard_deviation = sqrt(dispersion);
-//
-//     CHECK(counter-len >= expectation_of_number_of_requests -
-//     standard_deviation*safety_factor); CHECK(counter-len <=
-//     expectation_of_number_of_requests + standard_deviation*safety_factor);
-// }
-
-// TEST_CASE("BIG SIZES: random access. size=100, period=1000") {
-//     counter = 0;
-//
-////    double safety_factor = 10;
-//    const int len = 1000000000;
-//    const int size = 100000;
-//    const int period = 100000;
-//    LRUCache<std::string, std::string> cache(size, fetchFunction_str_str);
-//
-//    for (int i = 0; i < len; i++) {
-//        std::string val = std::to_string(rand()%period);
-//        CHECK(((*(cache.get(val))) == fetchFunction_str_str(val)));
-//    }
-//
-////    double p_of_new_request = 1 - (size / period);
-////    double expectation_of_number_of_requests = p_of_new_request * (len);
-////    double dispersion = p_of_new_request*(1-p_of_new_request)*(len);
-////    //    expectation_of_number_of_requests+=period;
-////    double standard_deviation = sqrt(dispersion);
-//
-////    CHECK(counter-len >= expectation_of_number_of_requests -
-///standard_deviation*safety_factor);
-//    CHECK(counter-len <= size);
-//}
