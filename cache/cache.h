@@ -12,6 +12,17 @@ public:
   LRUCache(int capacity, std::function<ValueType(const KeyType&)> fetchFunction)
       : _capacity(capacity), _fetchFunction(fetchFunction) {}
 
+  void print() {
+    std::cout << "Cache content:" << std::endl;
+    std::cout << "Capacity: " << _capacity << std::endl;
+    std::cout << "Size: " << _cacheItemsMap.size() << std::endl;
+
+    std::cout << "Items:" << std::endl;
+    for (const auto& item : _cacheItemsList) {
+      std::cout << "  " << item.first << ": " << item.second << std::endl;
+    }
+  }
+
   // Puts key-value pair in cache, moves pair to front of list
   void put(const KeyType& key, const ValueType& value) {
 
