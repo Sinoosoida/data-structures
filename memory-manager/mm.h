@@ -176,7 +176,7 @@ public:
       return false;
     }
 
-    if (p >= blk->pdata && p < blk->pdata + m_blkSize &&
+    if (p >= blk->pdata && p < blk->pdata + m_blkSize * step(sizeof(T)) &&
         (p - blk->pdata) % step(sizeof(T)) ==
             0) { // нашли блок, внутри которого содержится указатель
 
