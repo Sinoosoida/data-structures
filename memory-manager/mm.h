@@ -284,8 +284,6 @@ private:
 
   // Освободить память блока данных. Применяется в clear
   void deleteBlock(block *p) {
-    bool *emptyMask = new bool[m_blkSize];
-
     ::operator delete(p->pdata);
     delete p;
   }
