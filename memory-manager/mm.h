@@ -20,6 +20,14 @@ template <class TYPE> inline void DestructElements(TYPE *pElements) {
   memset(reinterpret_cast<void *>(pElements), 0, sizeof(TYPE));
 }
 
+/*
+ * В моей реализации, пока элемент не был выделен менеджером памяти, он хранит
+ * значение типа int, указывающее на индекс слдующего свободного элемента в
+ * блоке. Поэтому, если тип данных T меньше чем тип данных int, менеджер памяти
+ * не может работать коректно. Для решения этой проблемы используется эта
+ * функция, которая указывает, сколько элементов типа T нужно выделить на один
+ * элемент типа int, чтобы последний мог туда поместиться.
+ */
 size_t step(size_t T_size, size_t int_size = sizeof(int)) {
   if (int_size > T_size) {
     return (int_size - 1) / T_size + 1;
@@ -80,9 +88,6 @@ public:
       auto i = block->firstFreeIndex;
       while (i != -1) {
         mask[i] = true;
-        //        std::cout << (reinterpret_cast<int *>(block->pdata +
-        //                                              i * step(sizeof(T))))
-        //                  << std::endl;
         i = *(reinterpret_cast<int *>(block->pdata + i * step(sizeof(T))));
       }
 
@@ -156,13 +161,14 @@ public:
                     // следующего свободного элемента
     m_pCurrentBlk->firstFreeIndex = firstFreeIndex;
     m_pCurrentBlk->usedCount++;
+
+    // вызываем конструктор элемента
     ConstructElements(FreeSpace);
-    return reinterpret_cast<T *>(FreeSpace);
+    return (FreeSpace);
   }
 
   // Освободить элемент в менеджере
   bool deleteObject(T *p) {
-
     // найдём блок, где лежит элемент
     block *blk = m_pBlocks;
     while (blk &&
@@ -192,6 +198,7 @@ public:
 
       // Элемент в блоке, и он не удалён. Можно удалять.
       DestructElements(p); // вероятно, можно удалить
+
       auto second_free_index = blk->firstFreeIndex;
       blk->firstFreeIndex = (p - blk->pdata) / step(sizeof(T));
       *(reinterpret_cast<int *>((blk->pdata) +
@@ -210,35 +217,44 @@ public:
         nullptr) { // если блоки не были выделены, то и отчищать нечего
       return;
     }
-    if (m_isDeleteElementsOnDestruct) { // если мы хотим удалять элементы при
-                                        // отчистке
-      while (m_pBlocks != nullptr) { // удаляем все элементы
+
+    if (m_isDeleteElementsOnDestruct) { // если мы хотим удалять элементы
+
+      bool *empty_mask =
+          new bool[m_blkSize]; // будем запоменать все свободные ячейки
+
+      while (m_pBlocks != nullptr) { // проходимся по всем блокам
         block *tmp = m_pBlocks->pnext;
 
-        deleteBlock(m_pBlocks);
-        m_pBlocks = tmp;
-      }
-    } else { // если удалять элементы при отчистке мы не хотим
-
-      bool *emptyMask = new bool[m_blkSize]; // создаём маску, где обозначим все
-                                             // заполненные и свободные участки
-
-      while (m_pBlocks != nullptr) {
-        block *tmp = m_pBlocks->pnext;
         for (int i = 0; i < m_blkSize; i++) {
-          emptyMask[i] = false;
+          empty_mask[i] = true;
         }
+
         int FreeSpaceIndex = m_pBlocks->firstFreeIndex;
-        while (FreeSpaceIndex != -1) {
-          emptyMask[FreeSpaceIndex] = true;
+        while (FreeSpaceIndex !=
+               -1) { // проходимся по всем алоцированым элементам в блоке
+          empty_mask[FreeSpaceIndex] = false; // запоминаем свободные
           FreeSpaceIndex = *(reinterpret_cast<int *>(
               m_pBlocks->pdata + FreeSpaceIndex * step(sizeof(T))));
         }
-        deleteBlock(m_pBlocks, emptyMask);
+
+        for (int i = 0; i < m_blkSize; i++) {
+          if (empty_mask[i]) { // проходимся по занятым элементам
+            DestructElements(m_pBlocks->pdata +
+                             i * step(sizeof(T))); // вызываем деструктор
+          }
+        }
+
+        deleteBlock(m_pBlocks); // теперь удаляем блок
         m_pBlocks = tmp;
       }
 
-      delete[] emptyMask;
+    } else {
+      while (m_pBlocks != nullptr) { // проходимся по всем блокам
+        block *tmp = m_pBlocks->pnext;
+        deleteBlock(m_pBlocks); // теперь удаляем блок
+        m_pBlocks = tmp;
+      }
     }
     m_pBlocks = nullptr;
     m_pCurrentBlk = nullptr;
@@ -251,7 +267,11 @@ private:
     new_block->usedCount = 0;
     new_block->firstFreeIndex = 0;
     new_block->pnext = nullptr;
-    new_block->pdata = new T[m_blkSize * step(sizeof(T))];
+
+    // Выделение памяти без вызова конструктора элемента
+    new_block->pdata = reinterpret_cast<T *>(
+        ::operator new(m_blkSize * sizeof(T) * step(sizeof(T))));
+
     for (int i = 0; i < m_blkSize; i++) {
       *(reinterpret_cast<int *>(new_block->pdata + i * step(sizeof(T)))) =
           i + 1;
@@ -263,21 +283,11 @@ private:
   }
 
   // Освободить память блока данных. Применяется в clear
-  void deleteBlock(block *p, bool *emptyMask = nullptr) {
-    //            std::cout << p.pdata << stD::endl;
-    if (m_isDeleteElementsOnDestruct) {
-      delete[] p->pdata;
-      delete p;
-    } else {
-      for (int i = 0; i < m_blkSize; i++) {
-        if (!emptyMask[i]) {
-          DestructElements(p->pdata + i * step(sizeof(T)));
-        }
-      }
+  void deleteBlock(block *p) {
+    bool *emptyMask = new bool[m_blkSize];
 
-      delete[] p->pdata;
-      delete p;
-    }
+    ::operator delete(p->pdata);
+    delete p;
   }
 
   // Размер блока, сколько элементов типа T могут храниться в одном блоке
