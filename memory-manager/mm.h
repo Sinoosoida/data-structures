@@ -114,14 +114,14 @@ public:
               std::cout << space;
             }
             std::cout << out;
-            printf(reset);
+            printf(reset_color);
             std::cout << separator;
           } else {
             printf(allocated_color);
             for (int k = 0; k < std::to_string(m_blkSize - 1).length(); k++) {
               std::cout << used;
             }
-            printf(reset);
+            printf(reset_color);
             std::cout << separator;
           }
         }
