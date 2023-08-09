@@ -8,7 +8,7 @@
 
 #define free_color "\33[38;5;0;48;5;255m"
 #define allocated_color "\33[38;5;255;48;5;0m"
-#define reset "\33[m"
+#define reset_color "\33[m"
 
 template <class TYPE> inline void ConstructElements(TYPE *pElements) {
   memset(reinterpret_cast<void *>(pElements), 0, sizeof(TYPE));
