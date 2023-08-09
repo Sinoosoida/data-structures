@@ -145,8 +145,7 @@ public:
         block *last_block = nullptr;
         block *tmp_block = nullptr;
 
-        if (m_pCurrentBlk->pnext ==
-            nullptr) {
+        if (m_pCurrentBlk->pnext == nullptr) {
           last_block = m_pCurrentBlk;
           tmp_block = m_pBlocks;
         } else {
@@ -167,9 +166,11 @@ public:
                                           // начинали, значит все заполнены
           last_block->pnext =
               newBlock(); // создаём и добавляем в конец новый блок
-          m_pCurrentBlk = last_block->pnext; //теперь в нём будем место выделять
+          m_pCurrentBlk = last_block->pnext; // теперь в нём будем место
+                                             // выделять
         } else {
-          m_pCurrentBlk = tmp_block; //будем выделять место в незаполненом блоке
+          m_pCurrentBlk = tmp_block; // будем выделять место в незаполненом
+                                     // блоке
         }
       }
       // m_pCurrentBlk - незаполненый блок, который мы и будем заполнять
@@ -222,6 +223,15 @@ public:
 
     if (blk == nullptr) { // нужного не нашли
       return false;
+    }
+
+    // мы нашли кондидата
+    if ((reinterpret_cast<std::byte *>(p) -
+         reinterpret_cast<std::byte *>(blk->pdata)) %
+            (sizeof(T) * step(sizeof(T))) !=
+        0) {
+      return false; // указатель как бы в блоке, но при этом не в том месте, где
+                    // он мг бы быть выделен
     }
 
     int FreeIndex = blk->firstFreeIndex; // перебираем пустые места
