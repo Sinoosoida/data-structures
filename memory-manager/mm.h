@@ -149,6 +149,8 @@ public:
         }
         m_pCurrentBlk->pnext = newBlock();
         m_pCurrentBlk = m_pCurrentBlk->pnext;
+      } else {
+        m_pCurrentBlk = tmp;
       }
     }
 
