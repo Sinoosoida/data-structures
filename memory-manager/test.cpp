@@ -2,10 +2,10 @@
 
 #include "doctest.h"
 #include "mm.h"
-#include <typeinfo>
-#include <string>
-#include <vector>
 #include <random>
+#include <string>
+#include <typeinfo>
+#include <vector>
 
 using namespace lab618;
 
@@ -18,7 +18,7 @@ public:
 
   TestClass &operator=(const TestClass &other) = default;
 
-  virtual ~TestClass () = default;
+  virtual ~TestClass() = default;
 
   TestClass(const TestClass &other) = default;
 
@@ -34,7 +34,7 @@ private:
   time_t time = time_t();
 };
 
-//класс, тестирующий менеджер памяти
+// класс, тестирующий менеджер памяти
 template <class T> class mm_test {
 public:
   mm_test() = default;
@@ -105,7 +105,8 @@ public:
   std::vector<T *> deleted_data;
 };
 
-TEST_CASE_TEMPLATE("elementary operations", T, TestClass, bool, uint8_t , uint64_t , std::string, int, double) {
+TEST_CASE_TEMPLATE("elementary operations", T, TestClass, bool, uint8_t,
+                   uint64_t, std::string, int, double) {
 
   auto mm = CMemoryManager<T>(20, true);
   auto mmTest = mm_test<T>();
@@ -142,11 +143,12 @@ TEST_CASE_TEMPLATE("elementary operations", T, TestClass, bool, uint8_t , uint64
 }
 
 // Проверка того, что удалённые данные вновь выделяются
-TEST_CASE_TEMPLATE("Reusing space test", T, TestClass, bool, uint8_t , uint64_t , std::string, int, double) {
+TEST_CASE_TEMPLATE("Reusing space test", T, TestClass, bool, uint8_t, uint64_t,
+                   std::string, int, double) {
   auto mm = CMemoryManager<T>(10);
 
-  auto* p1 = mm.newObject();
-  auto* p2 = mm.newObject();
+  auto *p1 = mm.newObject();
+  auto *p2 = mm.newObject();
 
   CHECK(p1 != nullptr);
   CHECK(p2 != nullptr);
@@ -156,18 +158,19 @@ TEST_CASE_TEMPLATE("Reusing space test", T, TestClass, bool, uint8_t , uint64_t 
 
   mm.deleteObject(p1);
 
-  auto* p3 = mm.newObject();
+  auto *p3 = mm.newObject();
   CHECK(p3 == p1);
 }
 
 // Проверка копирования и присваивания объектов
-TEST_CASE_TEMPLATE("Reusing space test", T, TestClass, bool, uint8_t , uint64_t, int, double) {
+TEST_CASE_TEMPLATE("Reusing space test", T, TestClass, bool, uint8_t, uint64_t,
+                   int, double) {
   auto mm = CMemoryManager<T>(10);
 
-  auto* src = mm.newObject();
+  auto *src = mm.newObject();
   *src = T(42);
 
-  auto* dst = mm.newObject();
+  auto *dst = mm.newObject();
   *dst = *src;
 
   CHECK(*src == *dst);
@@ -176,17 +179,17 @@ TEST_CASE_TEMPLATE("Reusing space test", T, TestClass, bool, uint8_t , uint64_t,
   CHECK(*src != *dst);
 }
 
+TEST_CASE_TEMPLATE("Stress test", T, TestClass, bool, uint8_t, uint64_t,
+                   std::string, int, double) {
 
-TEST_CASE_TEMPLATE("Stress test", T, TestClass, bool, uint8_t , uint64_t , std::string, int, double) {
-
-  std::vector<int> block_sizes {1, 10, 100, 1000, 10000};
+  std::vector<int> block_sizes{1, 5, 10, 50, 100, 500, 1000, 5000, 10000};
   for (auto &block_size : block_sizes) {
     CMemoryManager<T> mm(block_size);
     auto mmTest = mm_test<T>();
 
     std::mt19937 gen(42);
 
-    for (int i = 0; i < 100000; i++) {
+    for (int i = 0; i < 200000; i++) {
 
       if (mmTest.allocated_data.empty()) {
         mmTest.add(mm.newObject());
@@ -202,5 +205,22 @@ TEST_CASE_TEMPLATE("Stress test", T, TestClass, bool, uint8_t , uint64_t , std::
 
       CHECK(mmTest.check()); // проверка целостности данных
     }
+  }
+}
+
+TEST_CASE_TEMPLATE("Bad pointer removing test", T, TestClass, bool, uint8_t,
+                   uint64_t, std::string, int, double) {
+  auto mm = CMemoryManager<T>(7);
+  auto mmTest = mm_test<T>();
+
+  for (int i = 0; i < 100; i++) {
+    mmTest.add(mm.newObject());
+  }
+
+  auto correct_pointer = mmTest.get_element();
+  for (int i = -10000; i < 10000; i++) {
+    auto some_pointer =
+        reinterpret_cast<T *>(reinterpret_cast<uint8_t *>(correct_pointer) + i);
+    CHECK(mm.deleteObject(some_pointer) == mmTest.remove(some_pointer));
   }
 }
