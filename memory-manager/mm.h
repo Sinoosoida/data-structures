@@ -138,20 +138,60 @@ public:
     if (m_pBlocks == nullptr) { // если блоков нет - создаём
       m_pBlocks = newBlock();
       m_pCurrentBlk = m_pBlocks;
-    } else { // если блоки есть, то перебираем их
-      auto tmp = m_pBlocks;
-      while ((tmp != nullptr) && (tmp->usedCount == m_blkSize)) {
-        tmp = tmp->pnext;
-      }
-      if (tmp == nullptr) { // если свободного блока не нашлось, то создаём
-        while (m_pCurrentBlk->pnext != nullptr) {
-          m_pCurrentBlk = m_pCurrentBlk->pnext;
+    } else { // блоки есть, нужно найти свободный или убедиться, что все заняты,
+             // и создать новый
+      if (m_pCurrentBlk->usedCount == m_blkSize) { // если текущий заполнен
+
+        block *last_block = nullptr;
+        block *tmp_block = nullptr;
+
+        if (m_pCurrentBlk->pnext ==
+            nullptr) {
+          last_block = m_pCurrentBlk;
+          tmp_block = m_pBlocks;
+        } else {
+          tmp_block = m_pCurrentBlk->pnext;
         }
-        m_pCurrentBlk->pnext = newBlock();
-        m_pCurrentBlk = m_pCurrentBlk->pnext;
-      } else {
-        m_pCurrentBlk = tmp;
+
+        while (tmp_block->usedCount == m_blkSize &&
+               tmp_block != m_pCurrentBlk) { // перебираем все блоки
+          if (tmp_block->pnext ==
+              nullptr) { // достигли конца - начинаем с начала
+            last_block = tmp_block;
+            tmp_block = m_pBlocks;
+          } else {
+            tmp_block = tmp_block->pnext;
+          }
+        }
+        if (tmp_block == m_pCurrentBlk) { // дошли до блока, с которого
+                                          // начинали, значит все заполнены
+          last_block->pnext =
+              newBlock(); // создаём и добавляем в конец новый блок
+          m_pCurrentBlk = last_block->pnext; //теперь в нём будем место выделять
+        } else {
+          m_pCurrentBlk = tmp_block; //будем выделять место в незаполненом блоке
+        }
       }
+      // m_pCurrentBlk - незаполненый блок, который мы и будем заполнять
+
+      //      if (m_pCurrentBlk->usedCount == m_blkSize) {//текущий заполнен,
+      //      найдём другой
+      //        auto tmp = m_pBlocks;
+      //        while ((tmp != nullptr) && (tmp->usedCount == m_blkSize)) {
+      //          tmp = tmp->pnext;
+      //        }
+      //        if (tmp == nullptr) { // если свободного блока не нашлось, то
+      //        создаём
+      //          while (m_pCurrentBlk->pnext != nullptr) { // находим последний
+      //          блок
+      //            m_pCurrentBlk = m_pCurrentBlk->pnext;
+      //          }
+      //          m_pCurrentBlk->pnext = newBlock();
+      //          m_pCurrentBlk = m_pCurrentBlk->pnext;
+      //        } else {
+      //          m_pCurrentBlk = tmp;
+      //        }
+      //      }
     }
 
     // теперь у нас есть свободный блок
@@ -184,33 +224,26 @@ public:
       return false;
     }
 
-    if (p >= blk->pdata && p < blk->pdata + m_blkSize * step(sizeof(T)) &&
-        (p - blk->pdata) % step(sizeof(T)) ==
-            0) { // нашли блок, внутри которого содержится указатель
-
-      int FreeIndex = blk->firstFreeIndex; // перебираем пустые места
-      while (FreeIndex != -1) {
-        if ((blk->pdata + FreeIndex * step(sizeof(T))) ==
-            p) { // если указатель указывает на пустое место
-          return false; // то элемент уже был удалён, повторно удалить не сможем
-        }
-        FreeIndex =
-            *reinterpret_cast<int *>(blk->pdata + FreeIndex * step(sizeof(T)));
+    int FreeIndex = blk->firstFreeIndex; // перебираем пустые места
+    while (FreeIndex != -1) {
+      if ((blk->pdata + FreeIndex * step(sizeof(T))) ==
+          p) { // если указатель указывает на пустое место
+        return false; // то элемент уже был удалён, повторно удалить не сможем
       }
-
-      // Элемент в блоке, и он не удалён. Можно удалять.
-      DestructElements(p); // вероятно, можно удалить
-
-      auto second_free_index = blk->firstFreeIndex;
-      blk->firstFreeIndex = (p - blk->pdata) / step(sizeof(T));
-      *(reinterpret_cast<int *>((blk->pdata) +
-                                (blk->firstFreeIndex) * step(sizeof(T)))) =
-          second_free_index;
-      blk->usedCount--;
-      return true;
-    } else {
-      return false;
+      FreeIndex =
+          *reinterpret_cast<int *>(blk->pdata + FreeIndex * step(sizeof(T)));
     }
+
+    // Элемент в блоке, и он не удалён. Можно удалять.
+    DestructElements(p); // вероятно, можно удалить
+
+    auto second_free_index = blk->firstFreeIndex;
+    blk->firstFreeIndex = (p - blk->pdata) / step(sizeof(T));
+    *(reinterpret_cast<int *>((blk->pdata) +
+                              (blk->firstFreeIndex) * step(sizeof(T)))) =
+        second_free_index;
+    blk->usedCount--;
+    return true;
   }
 
   // Очистка данных, зависит от m_isDeleteElementsOnDestruct
