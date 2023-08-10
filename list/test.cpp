@@ -170,6 +170,7 @@ TEST_CASE("SingleLinkedList: setLeafPreBegin") {
 TEST_CASE("SingleLinkedList: Erase test 1") {
   CSingleLinkedList<int> a;
   std::vector<int> array = {1, 2, 3, 4, 5, 10, 100, 1000, 10000};
+  CAPTURE(len_iter);
   for (auto len_iter = array.begin(); len_iter<array.end(); len_iter++) {
     int len = *len_iter;
     for (int i = 0; i < len; ++i) {
@@ -190,6 +191,7 @@ TEST_CASE("SingleLinkedList: Erase test 1") {
 TEST_CASE("SingleLinkedList: Erase test 2") {
   CSingleLinkedList<int> a;
   std::vector<int> array = {1, 2, 3, 4, 5, 10, 100, 1000, 10000};
+  CAPTURE(len_iter);
   for (auto len_iter = array.begin(); len_iter<array.end(); len_iter++) {
     int len = *len_iter;
     for (int i = 0; i < len; ++i) {
@@ -437,6 +439,7 @@ TEST_CASE("DualLinkedList: Erase test 1") {
   CDualLinkedList<int> a;
   std::vector<int> array = {1, 2, 3, 4, 5, 10, 100, 1000, 10000};
   for (auto len_iter = array.begin(); len_iter<array.end(); len_iter++) {
+    CAPTURE(len_iter);
     int len = *len_iter;
     for (int i = 0; i < len; ++i) {
       a.pushBack(i);
@@ -457,6 +460,7 @@ TEST_CASE("DualLinkedList: Erase test 2") {
   CDualLinkedList<int> a;
   std::vector<int> array = {1, 2, 3, 4, 5, 10, 100, 1000, 10000};
   for (auto len_iter = array.begin(); len_iter<array.end(); len_iter++) {
+    CAPTURE(len_iter);
     int len = *len_iter;
     for (int i = 0; i < len; ++i) {
       a.pushBack(i);
@@ -478,6 +482,7 @@ TEST_CASE("DualLinkedList: eraseAndNext test 1") {
   CDualLinkedList<int> a;
   std::vector<int> array = {1, 2, 3, 4, 5, 10, 100, 1000, 10000, 100000};
   for (auto len_iter = array.begin(); len_iter<array.end(); len_iter++) {
+    CAPTURE(len_iter);
     int len = *len_iter;
     for (int i = 0; i < len; ++i) {
       a.pushBack(i);
@@ -497,6 +502,7 @@ TEST_CASE("DualLinkedList: eraseAndNext test 2") {
   CDualLinkedList<int> a;
   std::vector<int> array = {1, 2, 3, 4, 5, 10, 100, 1000, 10000, 100000};
   for (auto len_iter = array.begin(); len_iter<array.end(); len_iter++) {
+    CAPTURE(len_iter);
     int len = *len_iter;
     for (int i = 0; i < len; ++i) {
       a.pushBack(i);
