@@ -6,30 +6,30 @@
 #include <iostream>
 #include <new>
 
-// Цвета для вывода в консоль
+// Р¦РІРµС‚Р° РґР»СЏ РІС‹РІРѕРґР° РІ РєРѕРЅСЃРѕР»СЊ
 #define FREE_COLOR "\33[38;5;0;48;5;255m"
 #define ALLOCATED_COLOR "\33[38;5;255;48;5;0m"
 #define RESET_COLOR "\33[m"
 
-// Вызов конструктора для элемента
+// Р’С‹Р·РѕРІ РєРѕРЅСЃС‚СЂСѓРєС‚РѕСЂР° РґР»СЏ СЌР»РµРјРµРЅС‚Р°
 template <class TYPE> inline void ConstructElements(TYPE *pElements) {
   memset(reinterpret_cast<void *>(pElements), 0, sizeof(TYPE));
   ::new (reinterpret_cast<void *>(pElements)) TYPE;
 }
 
-// Вызов деструктора для элемента
+// Р’С‹Р·РѕРІ РґРµСЃС‚СЂСѓРєС‚РѕСЂР° РґР»СЏ СЌР»РµРјРµРЅС‚Р°
 template <class TYPE> inline void DestructElements(TYPE *pElements) {
   pElements->~TYPE();
   memset(reinterpret_cast<void *>(pElements), 0, sizeof(TYPE));
 }
 
 /*
- * В моей реализации, пока элемент не был выделен менеджером памяти, он хранит
- * значение типа int, указывающее на индекс слдующего свободного элемента в
- * блоке. Поэтому, если тип данных T меньше чем тип данных int, менеджер памяти
- * не может работать коректно. Для решения этой проблемы используется эта
- * функция, которая указывает, сколько элементов типа T нужно выделить на один
- * элемент типа int, чтобы последний мог туда поместиться.
+ * Р’ РјРѕРµР№ СЂРµР°Р»РёР·Р°С†РёРё, РїРѕРєР° СЌР»РµРјРµРЅС‚ РЅРµ Р±С‹Р» РІС‹РґРµР»РµРЅ РјРµРЅРµРґР¶РµСЂРѕРј РїР°РјСЏС‚Рё, РѕРЅ С…СЂР°РЅРёС‚
+ * Р·РЅР°С‡РµРЅРёРµ С‚РёРїР° int, СѓРєР°Р·С‹РІР°СЋС‰РµРµ РЅР° РёРЅРґРµРєСЃ СЃР»РґСѓСЋС‰РµРіРѕ СЃРІРѕР±РѕРґРЅРѕРіРѕ СЌР»РµРјРµРЅС‚Р° РІ
+ * Р±Р»РѕРєРµ. РџРѕСЌС‚РѕРјСѓ, РµСЃР»Рё С‚РёРї РґР°РЅРЅС‹С… T РјРµРЅСЊС€Рµ С‡РµРј С‚РёРї РґР°РЅРЅС‹С… int, РјРµРЅРµРґР¶РµСЂ РїР°РјСЏС‚Рё
+ * РЅРµ РјРѕР¶РµС‚ СЂР°Р±РѕС‚Р°С‚СЊ РєРѕСЂРµРєС‚РЅРѕ. Р”Р»СЏ СЂРµС€РµРЅРёСЏ СЌС‚РѕР№ РїСЂРѕР±Р»РµРјС‹ РёСЃРїРѕР»СЊР·СѓРµС‚СЃСЏ СЌС‚Р°
+ * С„СѓРЅРєС†РёСЏ, РєРѕС‚РѕСЂР°СЏ СѓРєР°Р·С‹РІР°РµС‚, СЃРєРѕР»СЊРєРѕ СЌР»РµРјРµРЅС‚РѕРІ С‚РёРїР° T РЅСѓР¶РЅРѕ РІС‹РґРµР»РёС‚СЊ РЅР° РѕРґРёРЅ
+ * СЌР»РµРјРµРЅС‚ С‚РёРїР° int, С‡С‚РѕР±С‹ РїРѕСЃР»РµРґРЅРёР№ РјРѕРі С‚СѓРґР° РїРѕРјРµСЃС‚РёС‚СЊСЃСЏ.
  */
 size_t step(size_t T_size, size_t int_size = sizeof(int)) {
   if (int_size > T_size) {
@@ -43,28 +43,28 @@ namespace lab618 {
 template <class T> class CMemoryManager {
 private:
   struct block {
-    // Массив данных блока
+    // РњР°СЃСЃРёРІ РґР°РЅРЅС‹С… Р±Р»РѕРєР°
     T *pdata;
-    // Адрес следующего блока
+    // РђРґСЂРµСЃ СЃР»РµРґСѓСЋС‰РµРіРѕ Р±Р»РѕРєР°
     block *pnext;
-    // Первая свободная ячейка
+    // РџРµСЂРІР°СЏ СЃРІРѕР±РѕРґРЅР°СЏ СЏС‡РµР№РєР°
     int firstFreeIndex;
-    // Число заполненных ячеек
+    // Р§РёСЃР»Рѕ Р·Р°РїРѕР»РЅРµРЅРЅС‹С… СЏС‡РµРµРє
     int usedCount;
   };
 
 public:
   class CException {
-    // Не используется
+    // РќРµ РёСЃРїРѕР»СЊР·СѓРµС‚СЃСЏ
   public:
     CException() {}
   };
 
 public:
   /**
-    _default_block_size - количество элементов в блоке данных
-    isDeleteElementsOnDestruct - уничтожать элементы в деструкторе менеджера или
-    проверять на наличие неосвобожденных функцией deleteObject элементов.
+    _default_block_size - РєРѕР»РёС‡РµСЃС‚РІРѕ СЌР»РµРјРµРЅС‚РѕРІ РІ Р±Р»РѕРєРµ РґР°РЅРЅС‹С…
+    isDeleteElementsOnDestruct - СѓРЅРёС‡С‚РѕР¶Р°С‚СЊ СЌР»РµРјРµРЅС‚С‹ РІ РґРµСЃС‚СЂСѓРєС‚РѕСЂРµ РјРµРЅРµРґР¶РµСЂР° РёР»Рё
+    РїСЂРѕРІРµСЂСЏС‚СЊ РЅР° РЅР°Р»РёС‡РёРµ РЅРµРѕСЃРІРѕР±РѕР¶РґРµРЅРЅС‹С… С„СѓРЅРєС†РёРµР№ deleteObject СЌР»РµРјРµРЅС‚РѕРІ.
   */
   CMemoryManager(int _default_block_size,
                  bool isDeleteElementsOnDestruct = false)
@@ -72,7 +72,7 @@ public:
         m_pCurrentBlk(nullptr),
         m_isDeleteElementsOnDestruct(isDeleteElementsOnDestruct) {}
 
-  // Вывод информации о блоках в консоль
+  // Р’С‹РІРѕРґ РёРЅС„РѕСЂРјР°С†РёРё Рѕ Р±Р»РѕРєР°С… РІ РєРѕРЅСЃРѕР»СЊ
   void print() {
     std::string separator = "|";
     std::string used = "X";
@@ -139,16 +139,16 @@ public:
 
   T *newObject() {
 
-    // Если блоков еще нет, создадим первый
+    // Р•СЃР»Рё Р±Р»РѕРєРѕРІ РµС‰Рµ РЅРµС‚, СЃРѕР·РґР°РґРёРј РїРµСЂРІС‹Р№
     if (m_pBlocks == nullptr) {
       m_pBlocks = newBlock();
       m_pCurrentBlk = m_pBlocks;
     }
 
-    // Ищем незаполненный блок
+    // РС‰РµРј РЅРµР·Р°РїРѕР»РЅРµРЅРЅС‹Р№ Р±Р»РѕРє
     else if (m_pCurrentBlk->usedCount == m_blkSize) {
 
-      // Перебираем все блоки в поисках незаполненного
+      // РџРµСЂРµР±РёСЂР°РµРј РІСЃРµ Р±Р»РѕРєРё РІ РїРѕРёСЃРєР°С… РЅРµР·Р°РїРѕР»РЅРµРЅРЅРѕРіРѕ
       block *last_block = nullptr;
       block *tmp_block = m_pCurrentBlk->pnext;
 
@@ -167,33 +167,33 @@ public:
         }
       }
 
-      // Если нашли незаполненный, сохраняем его
+      // Р•СЃР»Рё РЅР°С€Р»Рё РЅРµР·Р°РїРѕР»РЅРµРЅРЅС‹Р№, СЃРѕС…СЂР°РЅСЏРµРј РµРіРѕ
       if (tmp_block != m_pCurrentBlk) {
         m_pCurrentBlk = tmp_block;
 
-        // Иначе создаем новый блок
+        // РРЅР°С‡Рµ СЃРѕР·РґР°РµРј РЅРѕРІС‹Р№ Р±Р»РѕРє
       } else {
         last_block->pnext = newBlock();
         m_pCurrentBlk = last_block->pnext;
       }
     }
 
-    // Берем первый свободный элемент из текущего блока
+    // Р‘РµСЂРµРј РїРµСЂРІС‹Р№ СЃРІРѕР±РѕРґРЅС‹Р№ СЌР»РµРјРµРЅС‚ РёР· С‚РµРєСѓС‰РµРіРѕ Р±Р»РѕРєР°
     T *FreeSpace =
         m_pCurrentBlk->pdata + m_pCurrentBlk->firstFreeIndex * step(sizeof(T));
     int firstFreeIndex = *(reinterpret_cast<int *>(FreeSpace));
 
-    // Обновляем индекс первого свободного
+    // РћР±РЅРѕРІР»СЏРµРј РёРЅРґРµРєСЃ РїРµСЂРІРѕРіРѕ СЃРІРѕР±РѕРґРЅРѕРіРѕ
     m_pCurrentBlk->firstFreeIndex = firstFreeIndex;
     m_pCurrentBlk->usedCount++;
 
-    // Вызываем конструктор элемента
+    // Р’С‹Р·С‹РІР°РµРј РєРѕРЅСЃС‚СЂСѓРєС‚РѕСЂ СЌР»РµРјРµРЅС‚Р°
     ConstructElements(FreeSpace);
 
     return FreeSpace;
   }
 
-  // Поиск блока по указателю на элемент
+  // РџРѕРёСЃРє Р±Р»РѕРєР° РїРѕ СѓРєР°Р·Р°С‚РµР»СЋ РЅР° СЌР»РµРјРµРЅС‚
   block *findBlock(T *elementPtr) {
 
     block *currentBlock = m_pBlocks;
@@ -210,15 +210,15 @@ public:
 
   bool deleteObject(T *elementPtr) {
 
-    // Поиск блока
+    // РџРѕРёСЃРє Р±Р»РѕРєР°
     block *currentBlock = findBlock(elementPtr);
 
-    // Если блок не найден - возвращаем ошибку
+    // Р•СЃР»Рё Р±Р»РѕРє РЅРµ РЅР°Р№РґРµРЅ - РІРѕР·РІСЂР°С‰Р°РµРј РѕС€РёР±РєСѓ
     if (!currentBlock) {
       return false;
     }
 
-    // Проверка валидности указателя
+    // РџСЂРѕРІРµСЂРєР° РІР°Р»РёРґРЅРѕСЃС‚Рё СѓРєР°Р·Р°С‚РµР»СЏ
     if ((reinterpret_cast<std::byte *>(elementPtr) -
          reinterpret_cast<std::byte *>(currentBlock->pdata)) %
             (sizeof(T) * step(sizeof(T))) !=
@@ -227,7 +227,7 @@ public:
       return false;
     }
 
-    // Поиск в списке свободных элементов
+    // РџРѕРёСЃРє РІ СЃРїРёСЃРєРµ СЃРІРѕР±РѕРґРЅС‹С… СЌР»РµРјРµРЅС‚РѕРІ
     int freeIndex = currentBlock->firstFreeIndex;
 
     while (freeIndex != -1) {
@@ -240,10 +240,10 @@ public:
                                             freeIndex * step(sizeof(T))));
     }
 
-    // Вызов деструктора
+    // Р’С‹Р·РѕРІ РґРµСЃС‚СЂСѓРєС‚РѕСЂР°
     DestructElements(elementPtr);
 
-    // Добавление в список свободных
+    // Р”РѕР±Р°РІР»РµРЅРёРµ РІ СЃРїРёСЃРѕРє СЃРІРѕР±РѕРґРЅС‹С…
     auto secondFreeIndex = currentBlock->firstFreeIndex;
     currentBlock->firstFreeIndex =
         (elementPtr - currentBlock->pdata) / step(sizeof(T));
@@ -252,19 +252,19 @@ public:
                               currentBlock->firstFreeIndex * step(sizeof(T)))) =
         secondFreeIndex;
 
-    // Уменьшаем счетчик использованных ячеек
+    // РЈРјРµРЅСЊС€Р°РµРј СЃС‡РµС‚С‡РёРє РёСЃРїРѕР»СЊР·РѕРІР°РЅРЅС‹С… СЏС‡РµРµРє
     currentBlock->usedCount--;
 
     return true;
   }
 
-  // Очистка данных, зависит от m_isDeleteElementsOnDestruct
+  // РћС‡РёСЃС‚РєР° РґР°РЅРЅС‹С…, Р·Р°РІРёСЃРёС‚ РѕС‚ m_isDeleteElementsOnDestruct
   void clear() {
     if (m_pBlocks == nullptr) {
       return;
     }
 
-    if (m_isDeleteElementsOnDestruct) { // если мы хотим удалять элементы
+    if (m_isDeleteElementsOnDestruct) { // РµСЃР»Рё РјС‹ С…РѕС‚РёРј СѓРґР°Р»СЏС‚СЊ СЌР»РµРјРµРЅС‚С‹
 
       bool *empty_mask = new bool[m_blkSize];
 
@@ -275,7 +275,7 @@ public:
           empty_mask[i] = true;
         }
 
-        // запоминаем свободные ячейки
+        // Р·Р°РїРѕРјРёРЅР°РµРј СЃРІРѕР±РѕРґРЅС‹Рµ СЏС‡РµР№РєРё
         int FreeSpaceIndex = m_pBlocks->firstFreeIndex;
         while (FreeSpaceIndex != -1) {
           empty_mask[FreeSpaceIndex] = false;
@@ -283,7 +283,7 @@ public:
               m_pBlocks->pdata + FreeSpaceIndex * step(sizeof(T))));
         }
 
-        // проходимся по занятым элементам
+        // РїСЂРѕС…РѕРґРёРјСЃСЏ РїРѕ Р·Р°РЅСЏС‚С‹Рј СЌР»РµРјРµРЅС‚Р°Рј
         for (int i = 0; i < m_blkSize; i++) {
           if (empty_mask[i]) {
             auto ptr = m_pBlocks->pdata + i * step(sizeof(T));
@@ -291,7 +291,7 @@ public:
           }
         }
 
-        // теперь удаляем блок
+        // С‚РµРїРµСЂСЊ СѓРґР°Р»СЏРµРј Р±Р»РѕРє
         deleteBlock(m_pBlocks);
         m_pBlocks = tmp;
       }
@@ -308,18 +308,18 @@ public:
   }
 
 private:
-  // Создать новый блок данных. Применяется в newObject
+  // РЎРѕР·РґР°С‚СЊ РЅРѕРІС‹Р№ Р±Р»РѕРє РґР°РЅРЅС‹С…. РџСЂРёРјРµРЅСЏРµС‚СЃСЏ РІ newObject
   block *newBlock() {
     auto *new_block = new block;
     new_block->usedCount = 0;
     new_block->firstFreeIndex = 0;
     new_block->pnext = nullptr;
 
-    // Выделение памяти без вызова конструктора элемента
+    // Р’С‹РґРµР»РµРЅРёРµ РїР°РјСЏС‚Рё Р±РµР· РІС‹Р·РѕРІР° РєРѕРЅСЃС‚СЂСѓРєС‚РѕСЂР° СЌР»РµРјРµРЅС‚Р°
     auto len = m_blkSize * sizeof(T) * step(sizeof(T));
     new_block->pdata = reinterpret_cast<T *>(::operator new(len));
 
-    // Заполнение индексами свободных элементов
+    // Р—Р°РїРѕР»РЅРµРЅРёРµ РёРЅРґРµРєСЃР°РјРё СЃРІРѕР±РѕРґРЅС‹С… СЌР»РµРјРµРЅС‚РѕРІ
     for (int i = 0; i < m_blkSize; i++) {
       auto ptr = new_block->pdata + i * step(sizeof(T));
       *(reinterpret_cast<int *>(ptr)) = i + 1;
@@ -331,19 +331,19 @@ private:
     return new_block;
   }
 
-  // Освободить память блока данных. Применяется в clear
+  // РћСЃРІРѕР±РѕРґРёС‚СЊ РїР°РјСЏС‚СЊ Р±Р»РѕРєР° РґР°РЅРЅС‹С…. РџСЂРёРјРµРЅСЏРµС‚СЃСЏ РІ clear
   void deleteBlock(block *p) {
     ::operator delete(p->pdata);
     delete p;
   }
 
-  // Размер блока, сколько элементов типа T могут храниться в одном блоке
+  // Р Р°Р·РјРµСЂ Р±Р»РѕРєР°, СЃРєРѕР»СЊРєРѕ СЌР»РµРјРµРЅС‚РѕРІ С‚РёРїР° T РјРѕРіСѓС‚ С…СЂР°РЅРёС‚СЊСЃСЏ РІ РѕРґРЅРѕРј Р±Р»РѕРєРµ
   int m_blkSize;
-  // Начало односвязного списка блоков
+  // РќР°С‡Р°Р»Рѕ РѕРґРЅРѕСЃРІСЏР·РЅРѕРіРѕ СЃРїРёСЃРєР° Р±Р»РѕРєРѕРІ
   block *m_pBlocks;
-  // Текущий блок
+  // РўРµРєСѓС‰РёР№ Р±Р»РѕРє
   block *m_pCurrentBlk;
-  // Удалять ли элементы при освобождении
+  // РЈРґР°Р»СЏС‚СЊ Р»Рё СЌР»РµРјРµРЅС‚С‹ РїСЂРё РѕСЃРІРѕР±РѕР¶РґРµРЅРёРё
   bool m_isDeleteElementsOnDestruct;
 };
 } // namespace lab618
