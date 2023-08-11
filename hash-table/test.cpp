@@ -10,7 +10,7 @@
 #include <unordered_set>
 #include <vector>
 
-TEST_CASE("Basic operations: hash_table_size") {
+TEST_CASE("Basic operations") {
   std::vector<int> data{1, 2, 3, 4, 5, 10};
   for (auto &hashTableSize : data) {
     CAPTURE(hashTableSize); // log the current input data
@@ -119,6 +119,7 @@ TEST_CASE("Basic operations: hash_table_size") {
 
 TEST_CASE("Stress test") {
   const int num_elements = 1000000;
+  std::mt19937 rand_setup(42);
 
   std::vector<int> data{num_elements / 100, num_elements / 10, num_elements / 2,
                         num_elements, num_elements * 2};
@@ -139,8 +140,7 @@ TEST_CASE("Stress test") {
       order.push_back(i);
     }
 
-    std::shuffle(order.begin(), order.end(),
-                 std::mt19937(std::random_device()()));
+    std::shuffle(order.begin(), order.end(), rand_setup);
 
     for (int i = 0; i < num_elements; ++i) {
       hash_table.add(&elements[order[i]]);
@@ -150,8 +150,7 @@ TEST_CASE("Stress test") {
       REQUIRE(hash_table.find(element) != nullptr);
     }
 
-    std::shuffle(order.begin(), order.end(),
-                 std::mt19937(std::random_device()()));
+    std::shuffle(order.begin(), order.end(), rand_setup);
 
     for (int i = 0; i < num_elements; ++i) {
       REQUIRE(hash_table.remove(elements[order[i]]));
