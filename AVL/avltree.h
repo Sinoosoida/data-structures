@@ -3,6 +3,7 @@
 
 #include "assert.h"
 #include "mm.h"
+#include "queue"
 namespace lab618 {
 
 template <class T, int (*Compare)(const T *pElement, const T *pElement2)>
@@ -22,14 +23,47 @@ public:
   };
 
 public:
-  CAVLTree(int defaultBlockSize) {
-    m_Memory = CMemoryManager<T>(defaultBlockSize, true);
+  CAVLTree(int defaultBlockSize)
+      : m_pRoot(nullptr), m_Memory(defaultBlockSize, true) {}
+
+  void print() { print(m_pRoot, std::vector<bool>()); }
+
+  void print(leaf *node, std::vector<bool> path) {
+    if (node) {
+      auto path_copy = path;
+      path_copy.push_back(false);
+      print(node->pRight, path_copy);
+
+      for (int i = 0; i < int(path.size()) - 1; ++i) {
+        if (path[i] != path[i + 1]) {
+          std::cout << "│   ";
+        } else {
+          std::cout << "    ";
+        }
+      }
+
+      if (!path.empty()) {
+        if (path[path.size() - 1] == true) {
+          std::cout << "└── ";
+        }
+        if (path[path.size() - 1] == false) {
+          std::cout << "┌── ";
+        }
+      }
+
+      std::cout << *(node->pData) << "\t" << (node->pData) << " ("
+                << node->balanceFactor << ")" << std::endl;
+
+      path_copy = path;
+      path_copy.push_back(true);
+      print(node->pLeft, path_copy);
+    }
   }
 
-  virtual ~CAVLTree() { clear(); }
+  enum Direction { Left, Right, None };
 
   bool add(T *pElement) {
-    leaf* newLeaf = m_Memory.newObject();
+    leaf *newLeaf = m_Memory.newObject();
     newLeaf->pData = pElement;
     newLeaf->pLeft = nullptr;
     newLeaf->pRight = nullptr;
@@ -40,42 +74,57 @@ public:
       return true;
     }
 
-    //найдём, куда можно сохранить вершину
+    // найдём, куда можно сохранить вершину
     leaf *current_node = m_pRoot;
-    std::vector<leaf *> path;
+    std::vector<std::pair<leaf *, Direction>> path;
 
     while (current_node != nullptr) {
-      path.push_back(current_node);
-      int cmp = Compare(&pElement, current_node->pData);
+      int cmp = Compare(pElement, current_node->pData);
       if (cmp < 0) {
+        path.push_back(std::make_pair(current_node, Left));
         current_node = current_node->pLeft;
       } else if (cmp > 0) {
+        path.push_back(std::make_pair(current_node, Right));
         current_node = current_node->pRight;
       } else {
         return false;
       }
     }
 
-    auto last_node = path[path.size()-1];
-    int cmp = Compare(&pElement, last_node);
-    if (cmp < 0) {
+    leaf *last_node = path[path.size() - 1].first;
+    if (path[path.size() - 1].second == Left) {
       last_node->pLeft = newLeaf;
-    } else if (cmp > 0) {
+    } else if (path[path.size() - 1].second == Right) {
       last_node->pRight = newLeaf;
     } else {
-      throw; //TODO убрать когда всё заработает
+      throw; // TODO убрать когда всё заработает
     }
+    //    leaf *last_node = path[path.size() - 1];
+    //    int cmp = Compare(pElement, last_node->pData);
+    //    if (cmp < 0) {
+    //      last_node->pLeft = newLeaf;
+    //    } else if (cmp > 0) {
+    //      last_node->pRight = newLeaf;
+    //    } else {
+    //      throw; // TODO убрать когда всё заработает
+    //    }
 
-    path.push_back(newLeaf);
+    path.push_back(std::make_pair(newLeaf, None));
 
-    for (int i = path.size() - 2; i >= 0; i--) {//TODO дописать
+    // Раставляем балансы
+    for (int i = path.size() - 2; i >= 0; i--) {
 
-      auto current_element = path[i];
-      auto previous_element = path[i + 1];
+      auto current_element = path[i].first;
+      auto way = path[i].second;
+      //      auto underneath_element = path[i + 1];
+      leaf *overhead_element = nullptr;
+      if (i > 0) {
+        overhead_element = path[i - 1].first;
+      }
 
-      if (current_element->pRight == previous_element) {
+      if (way == Right) {
         current_element->balanceFactor--;
-      } else if (current_element->pLeft == previous_element) {
+      } else if (way == Left) {
         current_element->balanceFactor++;
       } else {
         throw; // TODO убрать когда всё заработает
@@ -83,7 +132,7 @@ public:
 
       if (current_element->balanceFactor == 2 ||
           current_element->balanceFactor == -2) {
-        rotate(current_element);
+        rotate(current_element, overhead_element);
       }
 
       if (current_element->balanceFactor == 0) {
@@ -94,7 +143,9 @@ public:
   }
 
   bool update(T *pElement) {
-    //TODO
+    //    auto ret = this->remove(*pElement);
+    // TODO
+    return false;
   }
 
   T *find(const T &pElement) {
@@ -106,24 +157,24 @@ public:
       } else if (cmp > 0) {
         current_node = current_node->pRight;
       } else
-        return *current_node;
+        return current_node->pData;
     }
-    return current_node->pData;
+    return nullptr;
   }
 
   bool remove(const T &element) {
 
-    // сначала найдём, где хранится элемент
+    // найдём вершину
     leaf *current_node = m_pRoot;
-    std::vector<leaf *> path;
+    std::vector<std::pair<leaf *, Direction>> path;
 
     while (current_node != nullptr) {
-      path.push_back(current_node);
-
       int cmp = Compare(&element, current_node->pData);
       if (cmp < 0) {
+        path.push_back(std::make_pair(current_node, Left));
         current_node = current_node->pLeft;
       } else if (cmp > 0) {
+        path.push_back(std::make_pair(current_node, Right));
         current_node = current_node->pRight;
       } else {
         break;
@@ -136,45 +187,58 @@ public:
     }
 
     if (current_node->pRight == nullptr && current_node->pLeft == nullptr) {
+
+      // лист мы сразу удаляем
+      path.push_back(std::make_pair(current_node, None));
       remove(current_node, path);
+
     } else {
 
       // находим ближайшую по значению вершину
-      leaf *nearest_leaf = nullptr;
+      leaf *nearest_node = nullptr;
       if (current_node->pLeft != nullptr) {
-        nearest_leaf = current_node->pLeft;
 
-        while (nearest_leaf->pRight != nullptr) {
-          path.push_back(nearest_leaf);
-          nearest_leaf = nearest_leaf->pRight;
+        path.push_back(std::make_pair(current_node, Left));
+        nearest_node = current_node->pLeft;
+
+        while (nearest_node != nullptr) {
+          path.push_back(std::make_pair(nearest_node, Right));
+          nearest_node = nearest_node->pRight;
         }
 
-        std::swap(nearest_leaf->pData, current_node->pData);
+        nearest_node = path[path.size() - 1].first;
+        std::swap(nearest_node->pData, current_node->pData);
 
-        if (nearest_leaf->pLeft != nullptr) {
-          path.push_back(nearest_leaf->pLeft);
-          std::swap(nearest_leaf->pLeft->pData, nearest_leaf->pData);
+        if (nearest_node->pLeft != nullptr) {
+          path.push_back(std::make_pair(nearest_node->pLeft, None));
+          std::swap(nearest_node->pLeft->pData, nearest_node->pData);
+          remove(nearest_node->pLeft, path);
+        } else {
+          remove(nearest_node, path);
         }
 
-        remove(nearest_leaf->pLeft, path);
       } else {
-        nearest_leaf = current_node->pRight;
+        path.push_back(std::make_pair(current_node, Right));
+        nearest_node = current_node->pRight;
 
-        while (nearest_leaf->pLeft != nullptr) {
-          path.push_back(nearest_leaf);
-          nearest_leaf = nearest_leaf->pLeft;
+        while (nearest_node != nullptr) {
+          path.push_back(std::make_pair(nearest_node, Left));
+          nearest_node = nearest_node->pLeft;
         }
 
-        std::swap(nearest_leaf->pData, current_node->pData);
+        nearest_node = path[path.size() - 1].first;
+        std::swap(nearest_node->pData, current_node->pData);
 
-        if (nearest_leaf->pRight != nullptr) {
-          path.push_back(nearest_leaf->pRight);
-          std::swap(nearest_leaf->pRight->pData, nearest_leaf->pData);
+        if (nearest_node->pRight != nullptr) {
+          path.push_back(std::make_pair(nearest_node->pRight, None));
+          std::swap(nearest_node->pRight->pData, nearest_node->pData);
+          remove(nearest_node->pRight, path);
+        } else {
+          remove(nearest_node, path);
         }
-
-        remove(nearest_leaf->pRight, path);
       }
     }
+    return true;
   }
 
   void clear() {
@@ -183,23 +247,40 @@ public:
   }
 
 private:
-
-  void remove(leaf *element, std::vector<leaf *> path) {
+  void remove(leaf *element, std::vector<std::pair<leaf *, Direction>> &path) {
     assert(element->pLeft == nullptr);
     assert(element->pRight == nullptr);
-    assert(path[path.size() - 1] ==
+    assert(path[path.size() - 1].first ==
            element); // TODO убрать element когда всё заработает
 
+    //удаляем лист
     m_Memory.deleteObject(element);
 
-    for (int i = path.size() - 2; i >= 0; i--) {//TODO дописать
+    //удаляем указатель на него в дереве
+    if (path.size() >= 2) {
+      if (path[path.size() - 2].second == Left) {
+        path[path.size() - 2].first->pLeft = nullptr;
+      } else if (path[path.size() - 2].second == Right) {
+        path[path.size() - 2].first->pRight = nullptr;
+      } else {
+        throw;
+      }
+    }
 
-      auto current_element = path[i];
-      auto previous_element = path[i + 1];
+    //проставляем балансы
+    for (int i = path.size() - 2; i >= 0; i--) {
 
-      if (current_element->pRight == previous_element) {
+      auto current_element = path[i].first;
+      auto way = path[i].second;
+      //      auto underneath_element = path[i + 1];
+      leaf *overhead_element = nullptr;
+      if (i > 0) {
+        overhead_element = path[i - 1].first;
+      }
+
+      if (way == Right) {
         current_element->balanceFactor++;
-      } else if (current_element->pLeft == previous_element) {
+      } else if (way == Left) {
         current_element->balanceFactor--;
       } else {
         throw; // TODO убрать когда всё заработает
@@ -207,7 +288,7 @@ private:
 
       if (current_element->balanceFactor == 2 ||
           current_element->balanceFactor == -2) {
-        rotate(current_element);
+        rotate(current_element, overhead_element);
       }
 
       if (current_element->balanceFactor == 1 ||
@@ -217,61 +298,67 @@ private:
     }
   }
 
-  void rotate(leaf *node, leaf *previous_node) {//TODO требует проыерки
-    if (node->balanceFactor == -2) {
+  void rotate(leaf *node, leaf *overhead_node) { // TODO требует проыерки
+    if (node->balanceFactor == 2) {
       // левое поддерево тяжелее, нужно правое вращение
-      if (node->pLeft->balanceFactor <= 0) {
+      if (node->pLeft->balanceFactor >= 0) {
         // малое правое вращение
-        small_right_rotation(node, previous_node);
+        small_right_rotation(node, overhead_node);
       } else {
         // большое правое вращение
-        big_right_rotation(node, previous_node);
+        big_right_rotation(node, overhead_node);
       }
-    }
-    else if (node->balanceFactor == 2) {
+    } else if (node->balanceFactor == -2) {
       // правое поддерево тяжелее, нужно левое вращение
-      if (node->pRight->balanceFactor >= 0) {
+      if (node->pRight->balanceFactor <= 0) {
         // малое левое вращение
-        small_left_rotation(node, previous_node);
+        small_left_rotation(node, overhead_node);
       } else {
         // большое левое вращение
-        big_left_rotation(node, previous_node);
+        big_left_rotation(node, overhead_node);
       }
     }
   }
 
-  void small_left_rotation(leaf *node, leaf *previous_node) {
+  void small_left_rotation(leaf *node, leaf *overhead_element) {
     assert(node->pRight != nullptr);
 
-    //меняем ребёнка на нового
-    if (previous_node != nullptr) {
-      if (previous_node->pLeft == node) {
-        previous_node->pLeft = node->pRight;
-      } else if (previous_node->pRight == node) {
-        previous_node->pRight = node->pRight;
+    // меняем ребёнка на нового
+    if (overhead_element != nullptr) {
+      if (overhead_element->pLeft == node) {
+        overhead_element->pLeft = node->pRight;
+      } else if (overhead_element->pRight == node) {
+        overhead_element->pRight = node->pRight;
       }
+    } else {
+      m_pRoot = m_pRoot->pRight;
     }
 
-    //поворачиваем вершины
+    // поворачиваем вершины
     auto tmp = node->pRight;
     node->pRight = node->pRight->pLeft;
     tmp->pLeft = node;
 
-    //расставляем балансы
+    // расставляем балансы
     tmp->balanceFactor++;
     node->balanceFactor = -(tmp->balanceFactor);
+
+    // меняем так node на новый элемент в path
+    node = node->pRight;
   }
 
-  void small_right_rotation(leaf *node, leaf *previous_node) {
+  void small_right_rotation(leaf *node, leaf *overhead_element) {
     assert(node->pLeft != nullptr);
 
     // меняем ребёнка на нового
-    if (previous_node != nullptr) {
-      if (previous_node->pLeft == node) {
-        previous_node->pLeft = node->pLeft;
-      } else if (previous_node->pRight == node) {
-        previous_node->pRight = node->pLeft;
+    if (overhead_element != nullptr) {
+      if (overhead_element->pLeft == node) {
+        overhead_element->pLeft = node->pLeft;
+      } else if (overhead_element->pRight == node) {
+        overhead_element->pRight = node->pLeft;
       }
+    } else {
+      m_pRoot = m_pRoot->pLeft;
     }
 
     // поворачиваем вершины
@@ -282,28 +369,30 @@ private:
     // расставляем балансы
     tmp->balanceFactor--;
     node->balanceFactor = -(tmp->balanceFactor);
+
+    // меняем так node на новый элемент в path
+    node = node->pLeft;
   }
 
-  void big_left_rotation(leaf *node, leaf *previous_node) {
+  void big_left_rotation(leaf *node, leaf *overhead_element) {
     assert(node->pRight != nullptr);
     assert(node->pRight->pLeft != nullptr);
 
     small_right_rotation(node->pRight, node);
-    small_left_rotation(node, previous_node);
+    small_left_rotation(node, overhead_element);
   }
 
-  void big_right_rotation(leaf *node, leaf *previous_node) {
+  void big_right_rotation(leaf *node, leaf *overhead_element) {
     assert(node->pLeft != nullptr);
     assert(node->pLeft->pRight != nullptr);
 
     small_left_rotation(node->pLeft, node);
-    small_right_rotation(node, previous_node);
+    small_right_rotation(node, overhead_element);
   }
 
   leaf *m_pRoot;
   CMemoryManager<leaf> m_Memory;
 };
-
 }; // namespace lab618
 
 #endif // #define AVL_HEAD_H_2023_03_30
