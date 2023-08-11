@@ -142,10 +142,19 @@ public:
     return true;
   }
 
+  /**
+  Функция обновления элемента в Хеш-таблице. Обновляет, если элемент уже есть
+  добавляет, если элемента еще нет. Возвращает false, если был добавлен новый
+  элемент, true если элемент обновлен.
+  */
+  /**
+   Если элемент равный передаваемому уже хранится, то обновляется указатетель.
+    */
+
   bool update(T *pElement) {
-    //    auto ret = this->remove(*pElement);
-    // TODO
-    return false;
+    auto res = remove(*pElement);
+    add(pElement);
+    return res; //можно быстрее
   }
 
   T *find(const T &pElement) {
