@@ -110,10 +110,12 @@ TEST_CASE("Basic operations") {
   CHECK(res == nullptr);
 }
 
+
+
 TEST_CASE("Stress test") {
-  const int num_elements = 1000000;
   std::mt19937 rand_setup(42);
 
+  const int num_elements = 100000;
   lab618::CAVLTree<int, compare> cavlTree(5);
 
   std::vector<int> elements;
@@ -130,6 +132,8 @@ TEST_CASE("Stress test") {
 
   for (int i = 0; i < num_elements; ++i) {
     cavlTree.add(&elements[order[i]]);
+    CHECK(cavlTree.size() == i+1);
+    REQUIRE(cavlTree.check());
   }
 
   for (int element : elements) {
@@ -140,6 +144,8 @@ TEST_CASE("Stress test") {
 
   for (int i = 0; i < num_elements; ++i) {
     REQUIRE(cavlTree.remove(elements[order[i]]));
+    CHECK(cavlTree.size() == num_elements-i-1);
+    REQUIRE(cavlTree.check());
   }
 
   for (int element : elements) {
