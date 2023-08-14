@@ -4,7 +4,7 @@
 #include <cmath>
 
 using namespace std;
-//beautiful
+
 TEST_CASE("Fill cache") {
   auto fetch = [](int key) { return key; };
 
@@ -14,7 +14,7 @@ TEST_CASE("Fill cache") {
     cache.put(i, i + 1);
   }
 
-  CHECK(*cache.get(1) == 1); // 1 is still there
+  CHECK(*cache.get(1) == 2); // 1 is still there
 
   CHECK(*cache.get(6) == 6); // 6 was added
 }
