@@ -2,8 +2,8 @@
 #define AVL_HEAD_H_2023_03_30
 
 #include "assert.h"
-#include "mm.h"
 #include "deque"
+#include "mm.h"
 namespace lab618 {
 
 template <class T, int (*Compare)(const T *pElement, const T *pElement2)>
@@ -26,9 +26,9 @@ public:
   CAVLTree(int defaultBlockSize)
       : m_pRoot(nullptr), m_Memory(defaultBlockSize, true) {}
 
-  void print() { print(m_pRoot, std::deque<bool>()); }
+  void print() const { print(m_pRoot, std::deque<bool>()); }
 
-  void print(leaf *node, std::deque<bool> path) {
+  void print(leaf *node, std::deque<bool> path) const {
     if (node) {
       auto path_copy = path;
       path_copy.push_back(false);
@@ -60,15 +60,15 @@ public:
     }
   }
 
-  int size() { return size(m_pRoot); }
-  int size(leaf *root) {
+  int size() const { return size(m_pRoot); }
+  int size(leaf *root) const {
     if (root == nullptr) {
       return 0;
     }
     return size(root->pRight) + size(root->pLeft) + 1;
   }
 
-  int height(leaf *node) {
+  int height(leaf *node) const {
     if (node == nullptr) {
       return 0;
     }
@@ -82,8 +82,8 @@ public:
     }
   }
 
-  bool check() { return check(m_pRoot); }
-  bool check(leaf *node) {
+  bool check() const { return check(m_pRoot); }
+  bool check(leaf *node) const {
     if (node == nullptr) {
       return true;
     }
@@ -189,7 +189,7 @@ public:
     return res;
   }
 
-  T *find(const T &pElement) {
+  T *find(const T &pElement) const {
     leaf *current_node = m_pRoot;
     while (current_node != nullptr) {
       int cmp = Compare(&pElement, current_node->pData);
