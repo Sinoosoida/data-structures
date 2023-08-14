@@ -60,6 +60,51 @@ public:
     }
   }
 
+  int size() { return size(m_pRoot); }
+  int size(leaf *root) {
+    if (root == nullptr) {
+      return 0;
+    }
+    return size(root->pRight) + size(root->pLeft) + 1;
+  }
+
+  int height(leaf *node) {
+    if (node == nullptr) {
+      return 0;
+    }
+    auto left_height = height(node->pLeft);
+    auto right_height = height(node->pRight);
+
+    if (right_height >= left_height) {
+      return right_height + 1;
+    } else {
+      return left_height + 1;
+    }
+  }
+
+  bool check() { return check(m_pRoot); }
+  bool check(leaf *node) {
+    if (node == nullptr) {
+      return true;
+    }
+
+    auto left_height = height(node->pLeft);
+    auto right_height = height(node->pRight);
+
+    if (left_height - right_height != node->balanceFactor) {
+      return false;
+    }
+
+    auto left_check = check(node->pLeft);
+    auto right_check = check(node->pRight);
+
+    if ((!left_check) || (!right_check)) {
+      return false;
+    } else {
+      return true;
+    }
+  }
+
   enum Direction { Left, Right, None };
 
   bool add(T *pElement) {
@@ -94,20 +139,9 @@ public:
     leaf *last_node = path[path.size() - 1].first;
     if (path[path.size() - 1].second == Left) {
       last_node->pLeft = newLeaf;
-    } else if (path[path.size() - 1].second == Right) {
-      last_node->pRight = newLeaf;
     } else {
-      throw; // TODO убрать когда всё заработает
+      last_node->pRight = newLeaf;
     }
-    //    leaf *last_node = path[path.size() - 1];
-    //    int cmp = Compare(pElement, last_node->pData);
-    //    if (cmp < 0) {
-    //      last_node->pLeft = newLeaf;
-    //    } else if (cmp > 0) {
-    //      last_node->pRight = newLeaf;
-    //    } else {
-    //      throw; // TODO убрать когда всё заработает
-    //    }
 
     path.push_back(std::make_pair(newLeaf, None));
 
@@ -124,15 +158,22 @@ public:
 
       if (way == Right) {
         current_element->balanceFactor--;
-      } else if (way == Left) {
-        current_element->balanceFactor++;
       } else {
-        throw; // TODO убрать когда всё заработает
+        current_element->balanceFactor++;
       }
 
       if (current_element->balanceFactor == 2 ||
           current_element->balanceFactor == -2) {
         rotate(current_element, overhead_element);
+
+        if (i > 0) {
+          auto overhead_element_way = path[i - 1].second;
+          if (overhead_element_way == Left) {
+            current_element = overhead_element->pLeft;
+          } else {
+            current_element = overhead_element->pRight;
+          }
+        }
       }
 
       if (current_element->balanceFactor == 0) {
@@ -142,19 +183,10 @@ public:
     return true;
   }
 
-  /**
-  Функция обновления элемента в Хеш-таблице. Обновляет, если элемент уже есть
-  добавляет, если элемента еще нет. Возвращает false, если был добавлен новый
-  элемент, true если элемент обновлен.
-  */
-  /**
-   Если элемент равный передаваемому уже хранится, то обновляется указатетель.
-    */
-
   bool update(T *pElement) {
     auto res = remove(*pElement);
     add(pElement);
-    return res; //можно быстрее
+    return res;
   }
 
   T *find(const T &pElement) {
@@ -199,7 +231,7 @@ public:
 
       // лист мы сразу удаляем
       path.push_back(std::make_pair(current_node, None));
-      remove(current_node, path);
+      remove(path);
 
     } else {
 
@@ -216,14 +248,16 @@ public:
         }
 
         nearest_node = path[path.size() - 1].first;
+        path[path.size() - 1].second = None;
         std::swap(nearest_node->pData, current_node->pData);
 
         if (nearest_node->pLeft != nullptr) {
+          path[path.size() - 1].second = Left;
           path.push_back(std::make_pair(nearest_node->pLeft, None));
           std::swap(nearest_node->pLeft->pData, nearest_node->pData);
-          remove(nearest_node->pLeft, path);
+          remove(path);
         } else {
-          remove(nearest_node, path);
+          remove(path);
         }
 
       } else {
@@ -236,14 +270,16 @@ public:
         }
 
         nearest_node = path[path.size() - 1].first;
+        path[path.size() - 1].second = None;
         std::swap(nearest_node->pData, current_node->pData);
 
         if (nearest_node->pRight != nullptr) {
+          path[path.size() - 1].second = Right;
           path.push_back(std::make_pair(nearest_node->pRight, None));
           std::swap(nearest_node->pRight->pData, nearest_node->pData);
-          remove(nearest_node->pRight, path);
+          remove(path);
         } else {
-          remove(nearest_node, path);
+          remove(path);
         }
       }
     }
@@ -256,16 +292,12 @@ public:
   }
 
 private:
-  void remove(leaf *element, std::vector<std::pair<leaf *, Direction>> &path) {
-    assert(element->pLeft == nullptr);
-    assert(element->pRight == nullptr);
-    assert(path[path.size() - 1].first ==
-           element); // TODO убрать element когда всё заработает
+  void remove(std::vector<std::pair<leaf *, Direction>> &path) {
 
-    //удаляем лист
-    m_Memory.deleteObject(element);
+    // удаляем лист
+    m_Memory.deleteObject(path[path.size() - 1].first);
 
-    //удаляем указатель на него в дереве
+    // удаляем указатель на него в дереве
     if (path.size() >= 2) {
       if (path[path.size() - 2].second == Left) {
         path[path.size() - 2].first->pLeft = nullptr;
@@ -274,9 +306,11 @@ private:
       } else {
         throw;
       }
+    } else {
+      m_pRoot = nullptr;
     }
 
-    //проставляем балансы
+    // проставляем балансы
     for (int i = path.size() - 2; i >= 0; i--) {
 
       auto current_element = path[i].first;
@@ -289,15 +323,24 @@ private:
 
       if (way == Right) {
         current_element->balanceFactor++;
-      } else if (way == Left) {
+      }
+      if (way == Left) {
         current_element->balanceFactor--;
-      } else {
-        throw; // TODO убрать когда всё заработает
       }
 
       if (current_element->balanceFactor == 2 ||
           current_element->balanceFactor == -2) {
         rotate(current_element, overhead_element);
+
+        // меняем так же и текущий элемент
+        if (i > 0) {
+          auto overhead_element_way = path[i - 1].second;
+          if (overhead_element_way == Left) {
+            current_element = overhead_element->pLeft;
+          } else {
+            current_element = overhead_element->pRight;
+          }
+        }
       }
 
       if (current_element->balanceFactor == 1 ||
@@ -307,7 +350,7 @@ private:
     }
   }
 
-  void rotate(leaf *node, leaf *overhead_node) { // TODO требует проыерки
+  void rotate(leaf *node, leaf *overhead_node) {
     if (node->balanceFactor == 2) {
       // левое поддерево тяжелее, нужно правое вращение
       if (node->pLeft->balanceFactor >= 0) {
@@ -351,9 +394,6 @@ private:
     // расставляем балансы
     tmp->balanceFactor++;
     node->balanceFactor = -(tmp->balanceFactor);
-
-    // меняем так node на новый элемент в path
-    node = node->pRight;
   }
 
   void small_right_rotation(leaf *node, leaf *overhead_element) {
@@ -378,25 +418,42 @@ private:
     // расставляем балансы
     tmp->balanceFactor--;
     node->balanceFactor = -(tmp->balanceFactor);
-
-    // меняем так node на новый элемент в path
-    node = node->pLeft;
   }
 
   void big_left_rotation(leaf *node, leaf *overhead_element) {
     assert(node->pRight != nullptr);
     assert(node->pRight->pLeft != nullptr);
 
+    auto c_balance_factor = node->pRight->pLeft->balanceFactor;
+
+    auto a = node;
+    auto b = node->pRight;
+    auto c = node->pRight->pLeft;
+
     small_right_rotation(node->pRight, node);
     small_left_rotation(node, overhead_element);
+
+    c->balanceFactor = 0;
+    a->balanceFactor = (c_balance_factor == -1);
+    b->balanceFactor = -(c_balance_factor == 1);
   }
 
   void big_right_rotation(leaf *node, leaf *overhead_element) {
     assert(node->pLeft != nullptr);
     assert(node->pLeft->pRight != nullptr);
 
+    auto c_balance_factor = node->pLeft->pRight->balanceFactor;
+
+    auto a = node;
+    auto b = node->pLeft;
+    auto c = node->pLeft->pRight;
+
     small_left_rotation(node->pLeft, node);
     small_right_rotation(node, overhead_element);
+
+    c->balanceFactor = 0;
+    a->balanceFactor = -(c_balance_factor == 1);
+    b->balanceFactor = (c_balance_factor == -1);
   }
 
   leaf *m_pRoot;
