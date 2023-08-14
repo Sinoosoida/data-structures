@@ -3,7 +3,7 @@
 
 #include "assert.h"
 #include "mm.h"
-#include "queue"
+#include "deque"
 namespace lab618 {
 
 template <class T, int (*Compare)(const T *pElement, const T *pElement2)>
@@ -26,9 +26,9 @@ public:
   CAVLTree(int defaultBlockSize)
       : m_pRoot(nullptr), m_Memory(defaultBlockSize, true) {}
 
-  void print() { print(m_pRoot, std::vector<bool>()); }
+  void print() { print(m_pRoot, std::deque<bool>()); }
 
-  void print(leaf *node, std::vector<bool> path) {
+  void print(leaf *node, std::deque<bool> path) {
     if (node) {
       auto path_copy = path;
       path_copy.push_back(false);
@@ -121,7 +121,7 @@ public:
 
     // найдём, куда можно сохранить вершину
     leaf *current_node = m_pRoot;
-    std::vector<std::pair<leaf *, Direction>> path;
+    std::deque<std::pair<leaf *, Direction>> path;
 
     while (current_node != nullptr) {
       int cmp = Compare(pElement, current_node->pData);
@@ -207,7 +207,7 @@ public:
 
     // найдём вершину
     leaf *current_node = m_pRoot;
-    std::vector<std::pair<leaf *, Direction>> path;
+    std::deque<std::pair<leaf *, Direction>> path;
 
     while (current_node != nullptr) {
       int cmp = Compare(&element, current_node->pData);
@@ -292,7 +292,7 @@ public:
   }
 
 private:
-  void remove(std::vector<std::pair<leaf *, Direction>> &path) {
+  void remove(std::deque<std::pair<leaf *, Direction>> &path) {
 
     // удаляем лист
     m_Memory.deleteObject(path[path.size() - 1].first);
