@@ -103,7 +103,7 @@ std::vector<double> benchmarkCAVLTree(int num_elements,
 
 int main() {
 
-  const int defoult_block_size(1000000);
+  const int defoult_block_size(10000);
   const std::vector<int> test_sizes = {20000,40000, 60000,   80000,  100000,
                                        120000, 140000, 160000,180000, 200000};
   const std::string out_file("/home/mike/CLionProjects/data-structures/test/data.csv");
@@ -120,10 +120,10 @@ int main() {
     auto res =
         benchmarkCHash(test_size, defoult_block_size);
     double time = res[test_operation_index];
-    file << hash_name << "," << test_size << "," << int(time) << ",\n";
+    file << hash_name << "," << test_size << "," << time << ",\n";
     res = benchmarkCAVLTree(test_size, defoult_block_size);
     time = res[test_operation_index];
-    file << avl_name << "," << test_size << "," << int(time) << ",\n";
+    file << avl_name << "," << test_size << "," << time << ",\n";
   }
   file.close();
 }
