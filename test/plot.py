@@ -21,8 +21,9 @@ plt.plot(x_hash, y_hash, label='HASH',markersize=12)
 plt.plot(x_avl, y_avl, label='AVL', markersize=12)
 plt.xlabel('Количество элементов')
 plt.ylabel('Время выполнения')
-plt.xscale('log') # логарифмическая ось X
-plt.yscale('log') #
+plt.grid()
+# plt.xscale('log') # логарифмическая ось X
+# plt.yscale('log') #
 plt.legend()
 
 plt.savefig('result.png')
